@@ -130,17 +130,16 @@ class GlobbingFilter(object):
     Anything that passes through without matching either, is excluded.
     """
 
-    def __init__(self, include=None, exclude=None, max_depth=None,
-                 min_depth=None):
-        if include is None and exclude is None:
+    def __init__(self, 
+            include=None, include_path=None,
+            exclude=None, exclude_path=None,
+            max_depth=None, min_depth=None):
+        if not include:
             include = ['*']
-            exclude = []
-        elif include is None:
-            include = ['*']
-        elif exclude is None:
-            exclude = []
         self.include = include
         self.exclude = exclude
+        self.include_path = include_path
+        self.exclude_path = exclude_path
         self.max_depth = max_depth or 9999
         self.min_depth = min_depth or 0
 
@@ -160,16 +159,12 @@ class GlobbingFilter(object):
         return False
 
 
-def is_module_stdlib(file_name):
-    """Returns True if the file_name is in the lib directory."""
-    # TODO: Move these calls away from this function so it doesn't have to run
-    # every time.
-    lib_path = sysconfig.get_python_lib()
-    path = os.path.split(lib_path)
-    if path[1] == 'site-packages':
-        lib_path = path[0]
-    return file_name.lower().startswith(lib_path.lower())
-
+def will_trace_module(file_name):
+    if any(file_name.startswith(path) for path in settings['exclude_path']):
+        return False
+    if settings['include_path']:
+        return any(file_name.startswith(path) for path in settings['include_path'])
+    return True
 
 def start_trace(reset=True, filter_func=None, time_filter_func=None):
     """Begins a trace. Setting reset to True will reset all previously recorded
@@ -226,8 +221,7 @@ def tracer(frame, event, arg):
         if module:
             module_name = module.__name__
             module_path = module.__file__
-            if not settings['include_stdlib'] \
-                and is_module_stdlib(module_path):
+            if not will_trace_module(module_path):
                 keep = False
             if module_name == '__main__':
                 module_name = ''
@@ -260,7 +254,6 @@ def tracer(frame, event, arg):
 
         # Store the call information
         if keep:
-
             if call_stack:
                 fr = call_stack[-1]
             else:

@@ -52,12 +52,6 @@ parser.add_option(
     )
 
 parser.add_option(
-    '-s', '--stdlib', dest='include_stdlib', action='store_true',
-    default=False,
-    help='Include standard library functions in the trace. Default: False',
-    )
-
-parser.add_option(
     '-i', '--include', dest='include', default=[],
     action='append',
     help='Wildcard pattern of modules to include in the output. ' \
@@ -69,6 +63,20 @@ parser.add_option(
     action='append',
     help='Wildcard pattern of modules to exclude in the output. ' \
         'You can have multiple exclude arguments.',
+    )
+
+parser.add_option(
+    '--include-path', dest='include_path', default=[],
+    action='append',
+    help='File path of modules to include in the output. ' \
+        'You can have multiple include arguments.',
+    )
+
+parser.add_option(
+    '--exclude-path', dest='exclude_path', default=[],
+    action='append',
+    help='File path of modules to exclude in the output. ' \
+        'You can have multiple include arguments.',
     )
 
 parser.add_option(
@@ -116,7 +124,8 @@ time_filter_func = pycallgraph.GlobbingFilter(
     exclude=options.exclude_timing,
     )
 
-pycallgraph.settings['include_stdlib'] = options.include_stdlib
+pycallgraph.settings['include_path'] = options.include_path
+pycallgraph.settings['exclude_path'] = options.exclude_path
 
 # Remove this script from the argument list so we don't break the Python
 # script we are calling.
